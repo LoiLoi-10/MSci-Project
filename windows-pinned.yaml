@@ -1,0 +1,29 @@
+name: uk-wind-tidal
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+
+  - numpy
+  - pandas
+  - scipy
+  - xarray
+  - netcdf4
+  - bottleneck
+
+  - matplotlib
+
+  # geopandas stack (conda-forge is essential on Windows)
+  - geopandas
+  - shapely>=2
+  - pyproj
+  - fiona
+  - rtree
+
+  - pypsa
+  - linopy
+  - highspy
+
+  - tqdm
+  - pyyaml

@@ -1,0 +1,24 @@
+# environments
+.venv*
+venv*
+
+# outputs
+PyPSA_RESULTS/
+results_wind_tidal_fixed_fixed_wind_tidal/
+figures_site_selection/
+oat_summary.csv
+
+# caches
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# large data
+*.gpkg
+*.tif
+CMEMS_DATA/2025_12_CMEMS.nc
+
+# Large data files
+CMEMS_DATA/*.nc
+*.nc
+

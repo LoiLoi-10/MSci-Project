@@ -1,0 +1,8 @@
+site_id,name,lat,lon,p_nom_max_MW,region
+A1,Shetland Tidal Array Phase 1,60.698333,-0.985833,0.3,Scotland
+A2,MeyGen Phase 1,58.66,-3.12,6,Scotland
+A3,EMEC Blue Horizon,58.89,-2.95,0.01,Scotland
+A4,EMEC Orbital O2,59.14,-2.8,2,Scotland
+A5,EMEC Magallanes 2,59,-2.88,1.5,Scotland
+A6,Shetland Tidal Array Phase 2,60.698333,-0.985833,0.3,Scotland
+A7,Holyhead Deep - Phase 1,53.29,-4.8,0.5,North Wales

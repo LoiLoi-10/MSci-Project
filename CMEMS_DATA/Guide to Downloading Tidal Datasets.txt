@@ -1,0 +1,72 @@
+Guide to Downloading Tidal Datasets from the Copernicus Marine Service
+
+1)
+
+Access the Copernicus Marine Service
+
+Navigate to the official website:
+https://marine.copernicus.eu/
+
+2)
+
+Create or log in to your user account
+
+If you already have an account, log in using your credentials.
+If not, register for a new account. Account verification may take up to 24 hours.
+
+3)
+
+Authenticate locally using the Copernicus command line interface
+
+Navigate to the local directory where you intend to store the data.
+Ensure your virtual environment is activated and contains the required dependencies defined in your .yaml file.
+
+Run the following command and enter your Copernicus login details when prompted:
+
+copernicusmarine login
+
+4)
+
+Identify and select required datasets
+
+Use the Copernicus web catalogue to identify the appropriate tidal or ocean circulation datasets.
+Data can be downloaded programmatically using the copernicusmarine subset command, allowing spatial, temporal, and variable-based filtering.
+
+5)
+
+Example: Downloading data using Windows PowerShell
+
+The following examples download hourly current velocity data (uo, vo) for a defined spatial and temporal domain.
+
+Example 1:
+
+copernicusmarine subset --dataset-id cmems_mod_nws_phy-cur_anfc_1.5km-3D_PT1H-i
+--variable uo --variable vo
+--minimum-longitude -6.0 --maximum-longitude 2.0
+--minimum-latitude 48.0 --maximum-latitude 61.5
+--minimum-depth 20 --maximum-depth 50
+--start-datetime 2025-10-01T00:00:00 --end-datetime 2025-10-30T23:00:00
+--file-format netcdf `
+--output-directory D:\cmems_data
+
+Example 2:
+
+copernicusmarine subset --dataset-id cmems_mod_nws_phy-cur_anfc_1.5km-3D_PT1H-i
+--variable uo --variable vo
+--minimum-longitude -6.0 --maximum-longitude 2.0
+--minimum-latitude 48.0 --maximum-latitude 61.5
+--minimum-depth 20 --maximum-depth 50
+--start-datetime 2024-11-01T00:00:00 --end-datetime 2024-11-30T23:00:00
+--file-format netcdf `
+--output-directory D:\cmems_data
+
+Example 3:
+
+copernicusmarine subset --dataset-id cmems_mod_nws_phy-cur_anfc_1.5km-3D_PT1H-i
+--variable uo --variable vo
+--minimum-longitude -6.0 --maximum-longitude 2.0
+--minimum-latitude 48.0 --maximum-latitude 61.5
+--minimum-depth 20 --maximum-depth 50
+--start-datetime 2023-12-01T00:00:00 --end-datetime 2023-12-30T23:00:00
+--file-format netcdf `
+--output-directory D:\cmems_data
