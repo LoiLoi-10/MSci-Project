@@ -2,6 +2,7 @@
 # Script overview 
 #
 # Pipeline:
+#   
 #   1) Build candidate offshore wind + tidal sites (EEZ/land/dist/depth filters)
 #   2) Convert metocean data to hourly capacity-factor time series per candidate
 #   3) Solve PyPSA capacity expansion with exact build targets
@@ -44,7 +45,7 @@ os.environ["TEMP"] = str(TMP_DIR)
 # ---- Scenario mode:
 #   "wind_only": only wind, exact wind build
 #   "tidal_only": only tidal, exact tidal build (+ storage)
-#   "joint": wind + tidal, exact total build (+ storage), plus optional diversification bonus
+#   "joint": wind + tidal, exact total build (+ storage), plus optional diversification bonus (--> encourage both techs)
 SCENARIO = "joint"
 
 # ---- Exact build targets (MW)
@@ -65,7 +66,7 @@ BATHY_NETCDF = Path(r"C:\Users\one\OneDrive\Desktop\Msci Code\GEBCO_21_Dec_2025_
 BATHY_VAR = "elevation"
 BATHY_LAT_NAME = "lat"
 BATHY_LON_NAME = "lon"
-BATHY_POSITIVE_DOWN = False  # GEBCO elevation is negative offshore; convert to depth via -elev (change if dataset differs)
+BATHY_POSITIVE_DOWN = False  
 
 # ---- Depth bands (m, positive down)
 WIND_MIN_DEPTH_M = 10.0
@@ -93,9 +94,9 @@ ALPHA = 0.14
 HUB_HEIGHT_M = 100.0
 
 # ---- Tidal turbine/device CF curve parameters (m/s)
-TIDAL_CUT_IN = 0.6
+TIDAL_CUT_IN = 1.0
 TIDAL_RATED = 2.5
-TIDAL_CUT_OUT = 5.0
+TIDAL_CUT_OUT = 4.0
 
 # -----------------------------
 # Capacity limits
@@ -534,10 +535,10 @@ def fast_candidate_mask(
 
 # ============================================================
 # TIDAL clustering (max 20 cells per cluster)
-# Greedy: high CF first, assign to nearest eligible cluster if within radius and size < max_cells
+# Logic: high CF first, assign to nearest eligible cluster if within radius and size < max_cells
 # ============================================================
 
-def cluster_tidal_candidates_greedy(
+def cluster_tidal_candidates_logic(
     candidates: pd.DataFrame,
     cf_df: pd.DataFrame,
     cluster_km: float,
@@ -1019,7 +1020,7 @@ if RUN_TIDAL:
     print(f"[tidal] reduced to TOP_N_TIDAL={len(tidal_candidates)}")
 
     # Cluster top candidates into sites (cap cluster size)
-    tidal_candidates, tidal_cf_df = cluster_tidal_candidates_greedy(
+    tidal_candidates, tidal_cf_df = cluster_tidal_candidates_logic(
         tidal_candidates,
         tidal_cf_df,
         cluster_km=float(CLUSTER_KM_TIDAL),

@@ -19,18 +19,17 @@ import pypsa
 # ----------------------------
 
 # Hourly CF time series per generator/site.
-# Expected: index is timestamps; values in [0, 1].
 WIND_CF_HOURLY  = Path("wind_cf_hourly_per_site.csv")
 TIDAL_CF_HOURLY = Path("tidal_cf_hourly_per_site.csv")
 
 # Folder containing a PyPSA network exported as CSVs (pypsa.Network().export_to_csv_folder(...) format).
 NETWORK_RESULTS_FOLDER = Path("results_wind_tidal_fixed_fixed_wind_tidal")
 
-# Overnight CAPEX (£/MW) — i.e., total upfront cost per MW installed (NOT annualised).
+# Overnight CAPEX (£/MW) — i.e., total upfront cost per MW installed.
 CAPEX_WIND_GBP_PER_MW  = 3_000_000.0
 CAPEX_TIDAL_GBP_PER_MW = 3_500_000.0
 
-# Fixed OPEX as a fraction of CAPEX per year (dimensionless / year).
+# Fixed OPEX as a fraction of CAPEX per year 
 # Example: 0.03 means fixed OPEX = 3% of overnight CAPEX each year.
 OPEX_FRAC_PER_YEAR_WIND  = 0.03
 OPEX_FRAC_PER_YEAR_TIDAL = 0.04
@@ -65,7 +64,6 @@ n = pypsa.Network()
 n.import_from_csv_folder(str(NETWORK_RESULTS_FOLDER))
 
 # Identify wind/tidal generators by carrier in the network.
-# (Assumes carrier is set to exactly 'wind' and 'tidal'.)
 wind_gens  = n.generators.query("carrier == 'wind'").index
 tidal_gens = n.generators.query("carrier == 'tidal'").index
 
@@ -82,7 +80,7 @@ if len(tidal_gens) == 0:
 
 # Installed capacities (MW) taken from network generators table.
 # NOTE: using "p_nom" here means “fixed installed capacity”.
-# If you exported an optimised network and wanted the optimised builds, you might use "p_nom_opt".
+# If exported an optimised network and wanted the optimised builds, should use "p_nom_opt".
 p_nom_wind  = n.generators.loc[wind_gens,  "p_nom"]
 p_nom_tidal = n.generators.loc[tidal_gens, "p_nom"]
 
@@ -97,7 +95,7 @@ CFtidal_sys = (tidal_cf[tidal_gens].multiply(p_nom_tidal, axis=1).sum(axis=1) /
 # ----------------------------
 # 3) TEMPORAL VARIABILITY (CV)
 # ----------------------------
-# CV = std / mean of the system-wide CF time series.
+# CV = std / mu of the system-wide CF time series.
 def coeff_of_variation(x: pd.Series) -> float:
     mu = float(x.mean())
     sigma = float(x.std(ddof=0))
@@ -110,7 +108,6 @@ CV_tidal = coeff_of_variation(CFtidal_sys)
 # 4) COMPLEMENTARITY (Pearson correlation)
 # ----------------------------
 # Pearson r between wind and tidal system-wide CF series.
-# Negative/low correlation suggests complementarity (less co-variation).
 rw_t = float(CFwind_sys.corr(CFtidal_sys))
 
 # ----------------------------
@@ -126,14 +123,14 @@ coincident_low_hours = int(coincident_low_mask.sum())
 coincident_low_ratio = coincident_low_hours / len(idx)
 
 # ----------------------------
-# 6) ECONOMIC (LCOE)  --- FIXED ---
+# 6) ECONOMIC (LCOE) 
 # ----------------------------
 # LCOE formulation here:
 #   Annualised cost (annualised CAPEX via CRF + annual fixed OPEX + annual variable OPEX)
 #   divided by
 #   Annualised energy production (computed over model horizon and scaled to 8760 hours).
 #
-# Important conventions embedded here:
+# Important bewares embedded here:
 #   - CAPEX inputs are "overnight" £/MW (not annualised)
 #   - CRF turns overnight CAPEX into an equivalent annual payment (£/year)
 #   - Fixed OPEX is a fraction of overnight CAPEX per year
@@ -155,8 +152,6 @@ hours_year = 8760.0
 annualisation_factor = hours_year / hours_period
 
 # Energy produced over the horizon (MWh).
-# Since CF is dimensionless and p_nom is MW, CF * p_nom gives MW output each hour.
-# Summing over hours gives MW·h = MWh.
 Ewind_period_MWh  = float((CFwind_sys  * p_nom_wind.sum()).sum())   # MW * h
 Etidal_period_MWh = float((CFtidal_sys * p_nom_tidal.sum()).sum())
 

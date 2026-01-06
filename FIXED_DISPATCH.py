@@ -62,7 +62,7 @@ MARG_TIDAL = 179
 
 SCENARIO_LABEL = "fixed_wind_tidal"
 
-# Column mapping for your site CSVs
+# Column mapping for the site CSVs
 WIND_COLS = {
     "id":         "site_id",
     "name":       "name",

@@ -1,4 +1,4 @@
-# Fixed-capacity dispatch-only PyPSA model (no capacity expansion / no investment).
+# Fixed-capacity dispatch-only PyPSA model.
 #
 # What this script does:
 #   1) Loads ERA5 wind and converts it to hourly wind CF per wind site using a power curve.
@@ -50,14 +50,14 @@ SAVE_CF_HOURLY_PER_SITE = True         # capacity factor time series per generat
 SAVE_DISPATCH_PER_SITE = True          # dispatch time series per generator
 SAVE_FIXED_CAPACITY_TABLE = True       # installed capacity per generator
 
-# Label used in filenames/folders.
+
 SCENARIO_LABEL = "fixed_wind_tidal_2023_12"
 
-# Outputs that postprocess_metrics.py expects (fixed filenames).
+# Outputs that postprocess_metrics.py expects (filenames).
 OUT_WIND_CF_HOURLY = Path("wind_cf_hourly_per_site.csv")
 OUT_TIDAL_CF_HOURLY = Path("tidal_cf_hourly_per_site.csv")
 
-# Optional deeper exports (per-generator dispatch).
+# Optional exports (per-generator dispatch).
 OUT_WIND_DISPATCH_HOURLY = Path("wind_dispatch_hourly_per_site_MW.csv")
 OUT_TIDAL_DISPATCH_HOURLY = Path("tidal_dispatch_hourly_per_site_MW.csv")
 
@@ -77,9 +77,9 @@ ALPHA = 0.14
 # - gas has a positive marginal cost so it is used last
 MARG_WIND = 0.0
 MARG_TIDAL = 0.0
-MARG_GAS = 150.0
+MARG_GAS = 150.0  # not realy used honestly since gas is just backup
 
-# Column mappings expected in your sites CSV files.
+
 # p_nom column is treated as the FIXED installed capacity in MW.
 WIND_COLS = {
     "id": "site_id",
@@ -234,15 +234,6 @@ def load_demand_hourly_two_col_strict(csv_path: Path, snapshots: pd.DatetimeInde
         t3 = pd.to_datetime(time_str[t.isna()], format="%Y-%m-%d %H:%M:%S", errors="coerce")
         t.loc[t.isna()] = t3
 
-    # If still NaNs: stop early with examples.
-    if t.isna().any():
-        bad = time_str[t.isna()].unique()[:10]
-        bad_repr = [repr(x) for x in bad]
-        raise ValueError(
-            "Unparseable timestamps in demand CSV.\n"
-            f"Examples (repr): {bad_repr}"
-        )
-
     # Parse numeric demand and drop bad rows.
     demand = (
         df["demand_MW"]
@@ -306,11 +297,6 @@ def load_sites(csv_path: Path, cols: dict, kind: str) -> pd.DataFrame:
         "lon": df[cols["lon"]].astype(float),
         "p_nom_mw": pd.to_numeric(df[cols["p_nom"]], errors="coerce").astype(float),
     })
-
-    # Validate installed capacity column.
-    if out["p_nom_mw"].isna().any():
-        bad = out.loc[out["p_nom_mw"].isna(), "site_id"].head(10).tolist()
-        raise ValueError(f"{kind} sites file has non-numeric capacity entries for site_id: {bad}")
 
     # Wind requires hub height for shear scaling.
     if kind == "wind":
@@ -407,7 +393,7 @@ def main() -> None:
     snapshots = pd.DatetimeIndex(time_index)
     print(f"ERA5 snapshots: {snapshots[0]} → {snapshots[-1]} (n={len(snapshots)})")
 
-    # Compute reference wind speed magnitude at either 100m or 10m depending on available vars.
+    # Compute reference wind speed magnitude at either 100m or 10m depending on available variables.
     if "u100" in ds and "v100" in ds:
         ws_ref = xr.apply_ufunc(np.hypot, ds["u100"], ds["v100"])
         REF_HEIGHT = 100.0
@@ -420,7 +406,7 @@ def main() -> None:
     lat_vals = ds[lat_dim].values
     lon_vals = ds[lon_dim].values
 
-    # ---- Demand: strict alignment to ERA5 snapshots (fails if gaps)
+    # ---- Demand: strict alignment to ERA5 snapshots
     load_series = load_demand_hourly_two_col_strict(DEMAND_CSV, snapshots)
 
     # ---- Sites + turbine power curve
@@ -431,7 +417,7 @@ def main() -> None:
     print(f"\nLoaded {len(wind_sites)} offshore wind sites.")
     print(f"Loaded {len(tidal_sites)} tidal sites.")
 
-    # ---- Build PyPSA network (single bus system)
+    # ---- Build PyPSA network (single bus system)   ---> improve for future with multiple buses?
     n = pypsa.Network()
     for c in ["electricity", "wind", "tidal", "gas"]:
         if c not in n.carriers.index:
@@ -444,7 +430,7 @@ def main() -> None:
     # Pre-create p_max_pu DataFrame to store per-generator dispatch limits.
     n.generators_t.p_max_pu = pd.DataFrame(index=snapshots)
 
-    # ---- FIXED gas generator sized large so optimisation is always feasible.
+    # ---- Gas generator sized large so optimisation is always feasible.
     peak_load = float(load_series.max())
     gas_p_nom = max(60_000.0, 1.2 * peak_load)
     n.add(
@@ -460,7 +446,7 @@ def main() -> None:
     wind_cf_out = pd.DataFrame(index=snapshots)
     tidal_cf_out = pd.DataFrame(index=snapshots)
 
-    # ---- Add FIXED wind generators
+    # ---- Add wind generators
     # For each site:
     #   - find nearest ERA5 cell
     #   - scale speed to hub height using shear power law
